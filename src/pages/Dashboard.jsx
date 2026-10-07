@@ -71,7 +71,7 @@ function Dashboard() {
           <div className="stat-card">
 
             <div className="stat-icon">
-              📚
+              
             </div>
 
             <div>
@@ -85,7 +85,7 @@ function Dashboard() {
           <div className="stat-card">
 
             <div className="stat-icon">
-              📖
+              
             </div>
 
             <div>
@@ -99,7 +99,7 @@ function Dashboard() {
           <div className="stat-card">
 
             <div className="stat-icon">
-              👥
+              
             </div>
 
             <div>
@@ -113,7 +113,7 @@ function Dashboard() {
           <div className="stat-card">
 
             <div className="stat-icon">
-              ⚠️
+              
             </div>
 
             <div>
@@ -148,7 +148,7 @@ function Dashboard() {
             <div className="empty-state">
 
               <div className="empty-icon">
-                📚
+                
               </div>
 
               <h3>No books yet</h3>
