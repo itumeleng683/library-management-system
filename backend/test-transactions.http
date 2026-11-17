@@ -1,0 +1,25 @@
+### Test borrowing a book
+POST http://localhost:5000/transactions
+Content-Type: application/json
+
+{
+  "book_id": 1,
+  "user_id": 1,
+  "transaction_type": "BORROW",
+  "quantity": 1
+}
+
+### Get all transactions
+GET http://localhost:5000/transactions
+
+### Get all users
+GET http://localhost:5000/users
+
+### Register a new user
+POST http://localhost:5000/users
+Content-Type: application/json
+
+{
+   "name": "Itumeleng Matete",
+   "membership_id": "MM201"
+}

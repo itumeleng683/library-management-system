@@ -1,5 +1,11 @@
 import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
+import {
+  getBooks,
+  addBook,
+  updateBook,
+  deleteBook,
+} from "../services/api";
 
 function Books() {
   const [title, setTitle] = useState("");
@@ -9,27 +15,42 @@ function Books() {
   const [quantity, setQuantity] = useState("");
 
   const [books, setBooks] = useState([]);
-  const [editingIndex, setEditingIndex] = useState(null);
+  const [editingBookId, setEditingBookId] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Load books from localStorage
   useEffect(() => {
-    const savedBooks = localStorage.getItem("books");
-
-    if (savedBooks) {
-      setBooks(JSON.parse(savedBooks));
-    }
+    loadBooks();
   }, []);
 
-  // Add or update a book
-  function handleSubmit(e) {
-    e.preventDefault();
+  async function loadBooks() {
+    try {
+      const data = await getBooks();
+      setBooks(data);
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setLoading(false);
+    }
+  }
 
-    if (!title || !author || !genre || !isbn || !quantity) {
+  function clearForm() {
+    setTitle("");
+    setAuthor("");
+    setGenre("");
+    setIsbn("");
+    setQuantity("");
+    setEditingBookId(null);
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+
+    if (!title || !author || !genre || !isbn || quantity === "") {
       alert("Please fill in all fields.");
       return;
     }
 
-    const newBook = {
+    const book = {
       title,
       author,
       genre,
@@ -37,182 +58,144 @@ function Books() {
       quantity: Number(quantity),
     };
 
-    if (editingIndex !== null) {
-      const updatedBooks = [...books];
-      updatedBooks[editingIndex] = newBook;
+    try {
+      if (editingBookId !== null) {
+        await updateBook(editingBookId, book);
+        alert("Book updated successfully!");
+      } else {
+        await addBook(book);
+        alert("Book added successfully!");
+      }
 
-      setBooks(updatedBooks);
-      localStorage.setItem("books", JSON.stringify(updatedBooks));
-
-      alert("Book updated successfully!");
-
-      setEditingIndex(null);
-    } else {
-      const updatedBooks = [...books, newBook];
-
-      setBooks(updatedBooks);
-      localStorage.setItem("books", JSON.stringify(updatedBooks));
-
-      alert("Book added successfully!");
+      clearForm();
+      await loadBooks();
+    } catch (error) {
+      alert(error.message || "Something went wrong.");
     }
-
-    clearForm();
   }
 
-  // Clear the form
-  function clearForm() {
-    setTitle("");
-    setAuthor("");
-    setGenre("");
-    setIsbn("");
-    setQuantity("");
-  }
-
-  // Edit a book
-  function handleEdit(index) {
-    const book = books[index];
-
+  function handleEdit(book) {
+    setEditingBookId(book.id);
     setTitle(book.title);
     setAuthor(book.author);
     setGenre(book.genre);
     setIsbn(book.isbn);
-    setQuantity(book.quantity);
-
-    setEditingIndex(index);
+    setQuantity(String(book.quantity));
   }
 
-  // Delete a book
-  function handleDelete(index) {
-    const updatedBooks = books.filter((_, i) => i !== index);
+  async function handleDelete(bookId) {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this book?"
+    );
 
-    setBooks(updatedBooks);
-    localStorage.setItem("books", JSON.stringify(updatedBooks));
-  }
+    if (!confirmed) return;
 
-  // Cancel editing
-  function handleCancel() {
-    clearForm();
-    setEditingIndex(null);
+    try {
+      await deleteBook(bookId);
+      alert("Book deleted successfully!");
+      await loadBooks();
+    } catch (error) {
+      alert(error.message || "Could not delete this book.");
+    }
   }
 
   return (
-  <div className="dashboard">
+    <div className="dashboard">
+      <Sidebar />
 
-    <Sidebar />
+      <main className="main-content">
+        <div className="books-page">
+          <h1>Book Management</h1>
 
-    <main className="main-content">
+          <form className="book-form" onSubmit={handleSubmit}>
+            <h2>
+              {editingBookId !== null ? "Edit Book" : "Add New Book"}
+            </h2>
 
-      <div className="books-page">
-        </div>
-        </main>
+            <input
+              type="text"
+              placeholder="Book Title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
 
-      <h1>Book Management</h1>
-      <p>Add and manage books in the library.</p>
+            <input
+              type="text"
+              placeholder="Author"
+              value={author}
+              onChange={(e) => setAuthor(e.target.value)}
+            />
 
-      {/* Book Form */}
-      <div className="book-form">
+            <input
+              type="text"
+              placeholder="Genre"
+              value={genre}
+              onChange={(e) => setGenre(e.target.value)}
+            />
 
-        <h2>
-          {editingIndex !== null ? "Edit Book" : "Add New Book"}
-        </h2>
+            <input
+              type="text"
+              placeholder="ISBN"
+              value={isbn}
+              onChange={(e) => setIsbn(e.target.value)}
+            />
 
-        <form onSubmit={handleSubmit}>
+            <input
+              type="number"
+              min="0"
+              placeholder="Quantity"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+            />
 
-          <label>Title</label>
-          <input
-            type="text"
-            placeholder="Enter book title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-
-          <label>Author</label>
-          <input
-            type="text"
-            placeholder="Enter author name"
-            value={author}
-            onChange={(e) => setAuthor(e.target.value)}
-          />
-
-          <label>Genre</label>
-          <input
-            type="text"
-            placeholder="Enter genre"
-            value={genre}
-            onChange={(e) => setGenre(e.target.value)}
-          />
-
-          <label>ISBN</label>
-          <input
-            type="text"
-            placeholder="Enter ISBN"
-            value={isbn}
-            onChange={(e) => setIsbn(e.target.value)}
-          />
-
-          <label>Initial Quantity</label>
-          <input
-            type="number"
-            placeholder="Enter quantity"
-            min="0"
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-          />
-
-          <button type="submit">
-            {editingIndex !== null ? "Update Book" : "Add Book"}
-          </button>
-
-          {editingIndex !== null && (
-            <button
-              type="button"
-              onClick={handleCancel}
-            >
-              Cancel
+            <button type="submit">
+              {editingBookId !== null ? "Update Book" : "Add Book"}
             </button>
-          )}
 
-        </form>
-      </div>
-
-      {/* Books List */}
-      <div className="book-list">
-
-        <h2>Books in Library</h2>
-
-        {books.length === 0 ? (
-          <p>No books have been added yet.</p>
-        ) : (
-          books.map((book, index) => (
-            <div className="book-item" key={index}>
-
-              <h3>{book.title}</h3>
-
-              <p>Author: {book.author}</p>
-              <p>Genre: {book.genre}</p>
-              <p>ISBN: {book.isbn}</p>
-              <p>Quantity: {book.quantity}</p>
-
-              <button
-                className="edit-btn"
-                onClick={() => handleEdit(index)}
-              >
-                Edit
+            {editingBookId !== null && (
+              <button type="button" onClick={clearForm}>
+                Cancel
               </button>
+            )}
+          </form>
 
-              <button
-                className="delete-btn"
-                onClick={() => handleDelete(index)}
-              >
-                Delete
-              </button>
+          <div className="book-list">
+            <h2>Available Books</h2>
 
-            </div>
-          ))
-        )}
+            {loading ? (
+              <p>Loading books...</p>
+            ) : books.length === 0 ? (
+              <p>No books found. Add your first book.</p>
+            ) : (
+              books.map((book) => (
+                <div className="book-item" key={book.id}>
+                  <h3>{book.title}</h3>
+                  <p>Author: {book.author}</p>
+                  <p>Genre: {book.genre}</p>
+                  <p>ISBN: {book.isbn}</p>
+                  <p>Quantity: {book.quantity}</p>
 
-      </div>
+                  <button
+                    type="button"
+                    className="edit-btn"
+                    onClick={() => handleEdit(book)}
+                  >
+                    Edit
+                  </button>
 
+                  <button
+                    type="button"
+                    className="delete-btn"
+                    onClick={() => handleDelete(book.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
